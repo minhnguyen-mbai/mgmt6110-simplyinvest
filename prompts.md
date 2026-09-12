@@ -1181,3 +1181,63 @@ After the change, briefly explain:
 - which unnecessary requests were removed
 - what now triggers a market-data request
 - how duplicate requests were prevented
+
+
+## Prompt 10
+
+### Prompt
+
+Review only the current market-data display in the SimplyInvest Investment screen.
+
+Do not redesign the interface.
+Do not change calculations.
+Do not change API request behavior.
+Do not add new features.
+
+Make only these two clarity improvements:
+
+1. UNSELECTED COMPANY PRICE STATE
+
+Because SimplyInvest now fetches only the selected company's quote,
+unselected companies may not have price data yet.
+
+Do not display:
+
+"... USD"
+
+for a company whose quote has not been loaded.
+
+Instead display a clear neutral state such as:
+
+"Select to load price"
+
+Do not fetch the price automatically.
+Do not reintroduce background prefetching.
+
+2. FX TIMESTAMP CLARITY
+
+The FX API returns a provider timestamp together with:
+
+timeZone: "UTC"
+
+When displaying "Last updated", include the provider timezone.
+
+Example:
+
+"Last updated: 2026-09-12 10:28:13 UTC"
+
+Do not convert or invent timestamps.
+If lastRefreshed is null, do not show the timestamp.
+
+GUARDRAILS
+
+Do not modify:
+- api/fx.js
+- api/quote.js
+- api/health.js
+- caching behavior
+- API request logic
+
+Do not add charts, news, portfolio features, recommendations, or trading functionality.
+
+After making the change, briefly state what changed.
