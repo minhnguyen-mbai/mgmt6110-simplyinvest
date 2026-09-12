@@ -143,3 +143,88 @@ Prioritize one clear job per screen.
 On Screen 1, make the main question and the result the two strongest visual elements.
 
 Do not redesign the application if the current structure already supports this goal.
+
+#Prompt 3
+
+Review all wording in the current SimplyInvest interface for a user who has
+never invested before.
+
+Do not redesign the application.
+Do not add new features.
+
+Keep the existing three-screen flow:
+1. Investment
+2. Review
+3. Success
+
+GOAL
+
+A complete beginner should understand the interface without knowing
+professional financial or trading terminology.
+
+Keep necessary concepts such as:
+- shares
+- stock price
+- currency conversion
+- stock symbol
+
+but explain them briefly in everyday language when they first appear.
+
+SPECIFIC CHANGES
+
+1. Keep the company name as the primary label.
+   Make the ticker symbol secondary.
+   When a ticker first appears, clarify subtly that it is the company's
+   stock-market symbol.
+
+   Example:
+   Apple
+   AAPL · stock symbol
+
+2. Where the SGD to USD rate appears, help the user understand why it matters.
+
+   Prefer wording such as:
+
+   "Currency conversion"
+   "1 SGD = 0.75 USD"
+   "US shares are priced in US dollars."
+
+   Avoid technical language such as:
+   base currency,
+   quote currency,
+   FX pair.
+
+3. Replace any CTA wording that could be ambiguous.
+
+   On Screen 1, use:
+   "Review simulation"
+
+   instead of:
+   "See investment"
+
+4. Keep:
+   "You could own approximately X shares"
+
+   because this is the product's main beginner-friendly answer.
+
+5. Do not introduce terminology such as:
+   market order,
+   position,
+   execution,
+   bid,
+   ask,
+   order book,
+   P&L.
+
+6. Do not add a glossary, tooltip system, tutorial, modal, FAQ,
+   or additional educational section.
+
+7. Keep explanations short and inline at the moment they are needed.
+
+GUARDRAILS
+
+Do not change calculation logic.
+Do not change the mock data.
+Do not connect an API yet.
+Do not add charts, news, portfolio features, recommendations, or trading tools.
+Do not redesign the visual structure unless a small wording adjustment requires it.
