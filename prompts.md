@@ -1115,3 +1115,69 @@ Do not modify fx.js or health.js.
 Do not redesign the front end.
 
 After the change, briefly state exactly what changed and why.
+
+
+## Prompt 9
+
+### Prompt
+
+Review only src/App.tsx for API request discipline.
+
+Do not redesign the application.
+Do not change the back-end endpoints.
+Do not add new features.
+
+The current implementation pre-fetches the remaining supported stock symbols
+in the background and may trigger loadMarketData from more than one place.
+
+Simplify the behavior so SimplyInvest only fetches market data that the user
+currently needs.
+
+REQUIREMENTS
+
+1. Remove background pre-fetching of AAPL, MSFT, and NVDA.
+
+On initial load:
+- fetch SGD/USD data
+- fetch only the currently selected company's quote
+
+When the user selects another company:
+- fetch only that company's quote if it is not already available in the
+  existing client-side cache
+
+Do not fetch quotes for companies the user has not selected.
+
+2. Avoid duplicate requests when the selected company changes.
+
+Use one clear source of truth for triggering loadMarketData.
+
+Do not call loadMarketData both:
+- inside the company selection handler
+- and again through an effect caused by the same selection change
+
+Prefer the simplest implementation.
+
+3. Preserve the existing client-side cache in marketData.ts.
+
+Changing the SGD investment amount must not trigger a new market-data request.
+
+Switching back to a company whose quote is still cached should reuse the
+cached value.
+
+4. Keep all current error states:
+- loading
+- empty
+- provider error
+- provider unreachable
+
+5. Do not introduce mock stock prices or mock FX fallback.
+
+6. Do not modify:
+- api/fx.js
+- api/quote.js
+- api/health.js
+
+After the change, briefly explain:
+- which unnecessary requests were removed
+- what now triggers a market-data request
+- how duplicate requests were prevented
