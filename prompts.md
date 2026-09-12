@@ -116,7 +116,15 @@ A later step will replace those claims with real external data
 through a server-side API.
 
 
-## Prompt 2
+### What came back
+
+AI Studio generated a three-screen investment simulation using mock market data. The first version allowed the user to enter an SGD amount, choose Apple, Microsoft, or NVIDIA, see an estimated share quantity, review the calculation, and complete a simulated confirmation.
+
+### My action / judgment
+
+I kept the three-screen structure because it matched the core job, but I decided that the interface still needed to be tested for first-time comprehension, beginner language, mobile usability, and unnecessary explanation.
+
+## Prompt 2 - Improve First-Time Comprehension
 
 ### Prompt
 
@@ -148,11 +156,11 @@ On Screen 1, make the main question and the result the two strongest visual elem
 
 Do not redesign the application if the current structure already supports this goal.
 
-##Came back with:
+### What came back
 
 A clearer hierarchy centred on the amount, company and estimated shares. The previous educational blocks were reduced, and the three screens became more focused on the simulation flow.
 
-### Action: 
+### Action
 
 I kept the overall structure because the core task was understandable quickly. I identified remaining terminology and mobile-layout issues for the next iterations.
 
@@ -161,7 +169,7 @@ I kept the overall structure because the core task was understandable quickly. I
 
 I decided to simplify necessary financial terminology rather than remove it, because the user still needs to understand what a share price and currency conversion mean.
 
-##Prompt 3
+##Prompt 3 - Plain-Language Audit
 
 ### Prompt
 
@@ -248,8 +256,15 @@ Do not connect an API yet.
 Do not add charts, news, portfolio features, recommendations, or trading tools.
 Do not redesign the visual structure unless a small wording adjustment requires it.
 
+### What came back
 
-## Prompt 4
+The product kept necessary concepts but explained them in simpler language. The company cards later showed labels such as AAPL · stock symbol, the main CTA became Review simulation, and the calculation used the wording Currency conversion.
+
+### My action / judgment
+
+I accepted the simpler language because it reduced the amount of prior financial knowledge needed to use the product.
+
+## Prompt 4 - Mobile Optimization at Approximately 390px
 
 ### Prompt
 
@@ -370,8 +385,15 @@ Do not remove important beginner-friendly explanations.
 
 Only make responsive layout, spacing, typography, wrapping and tap-target improvements required for mobile usability.
 
+### What came back
 
-## Prompt 5
+The mobile version used a vertical layout for the company cards and kept the amount controls, company selection, and review flow usable at approximately 390px without horizontal scrolling.
+
+### My action / judgment
+
+I kept the responsive changes and later manually checked the deployed product at a narrow viewport.
+
+## Prompt 5 - Final Front-End QA Before API Integration
 
 ### Prompt
 
@@ -536,9 +558,17 @@ After making the fixes, summarize:
 3. Which parts already passed and were left unchanged.
 4. Any remaining limitation that should be addressed when real API data is connected.
 
+### What came back
+
+The front end remained focused on one user job and was ready to move from mock data to external market data without changing the product structure.
+
+### My action / judgment
+
+I stopped adding front-end features. I pushed the mock-data version to GitHub and deployed it to Vercel before adding the back end, so I had a clean working checkpoint.
+
 --- 
 
-## Manual Check — Verify Alpha Vantage Response
+## Manual Check — erify Alpha Vantage Before Asking the AI to Build the Back End
 
 Before asking the agent to build the back end, I called the Alpha Vantage
 endpoints manually.
@@ -560,9 +590,14 @@ I verified that:
 I did this before prompting because I did not want the agent to guess
 the API response structure.
 
+
+### My judgment
+
+I used the actual provider response as context for the back-end prompt. I did this because a correct-looking implementation could still fail if the agent guessed the provider fields incorrectly.
+
 ---
 
-## Prompt 6
+## Prompt 6 - Add Alpha Vantage Back End and Real Market Data
 
 ### Prompt
 
@@ -987,7 +1022,51 @@ REAL AAPL GLOBAL_QUOTE RESPONSE:
 }
 
 
-## Promt 7
+### What came back
+
+The agent created:
+
+- api/fx.js
+
+- api/quote.js
+
+- api/health.js
+
+- a front-end market-data service
+
+- real-data integration for the existing Investment, Review, and Success screens
+
+The API key was read through process.env.ALPHAVANTAGE_API_KEY.
+
+The front end called /api/fx and /api/quote instead of calling Alpha Vantage directly.
+
+### My action / judgment
+
+I did not push the generated code immediately.
+
+I manually inspected:
+
+- file placement,
+
+- package configuration,
+
+- secret handling,
+
+- browser/server boundary,
+
+- provider response parsing,
+
+- normalized outputs,
+
+- error handling,
+
+- cache behavior.
+
+During this inspection I found decisions that were technically plausible but not acceptable for market-data integrity.
+
+--- 
+
+## Promt 7 - Fix FX Data-Integrity Issues
 
 ### Prompt
 
@@ -1053,8 +1132,23 @@ Do not modify quote.js or health.js in this task.
 
 After the change, briefly state exactly what changed and why.
 
+### What came back
 
-## Prompt 8
+The agent removed the stale-cache fallback from provider-failure paths and stopped generating a replacement timestamp when Alpha Vantage did not provide one.
+
+The normalized FX response now preserves null for missing freshness metadata.
+
+### My action / judgment
+
+I accepted the correction.
+
+This was an important human-review moment because the original code was technically functional, but it could have made old data look fresh or created a timestamp that did not come from the provider.
+
+
+---
+
+
+## Prompt 8 - Fix Quote Data-Integrity Issues
 
 ### Prompt
 
@@ -1116,8 +1210,18 @@ Do not redesign the front end.
 
 After the change, briefly state exactly what changed and why.
 
+### What came back
 
-## Prompt 9
+The agent removed stale quote fallback behavior from provider-failure paths and changed missing latestTradingDay metadata from an empty string to null.
+
+### My action / judgment
+
+I accepted the correction because missing provider metadata should remain missing rather than being disguised as a normal value.
+
+___
+
+
+## Prompt 9 - Remove Unnecessary Quote Prefetching and Duplicate Requests
 
 ### Prompt
 
@@ -1182,6 +1286,19 @@ After the change, briefly explain:
 - what now triggers a market-data request
 - how duplicate requests were prevented
 
+### What came back
+
+The agent removed background prefetching and simplified when market-data requests are triggered.
+
+### My action / judgment
+
+I manually inspected the deployed Network panel.
+
+On initial use, the application fetched the selected company rather than prefetching every supported company. When I later selected Microsoft, the Microsoft request appeared. NVIDIA was not fetched until needed.
+
+I kept this behavior because it reduces unnecessary API calls and makes the request policy easier to explain.
+
+---
 
 ## Prompt 10
 
@@ -1241,3 +1358,212 @@ Do not modify:
 Do not add charts, news, portfolio features, recommendations, or trading functionality.
 
 After making the change, briefly state what changed.
+
+---
+
+## Manual Inspection — Secret and Server Boundary
+
+Before pushing the real-data version, I searched the project for:
+
+ALPHAVANTAGE_API_KEY
+
+VITE_ALPHAVANTAGE
+
+alphavantage.co
+
+/api/fx
+
+/api/quote
+
+Observed:
+
+VITE_ALPHAVANTAGE returned no executable-code result.
+
+Alpha Vantage URLs appeared only in the server-side api/ files.
+
+The front end called /api/fx and /api/quote.
+
+health.js returned only credential presence and upstream status, not the key, prefix, or length.
+
+mockData.ts contained only company metadata and preset investment amounts; it did not contain mock stock prices or an FX fallback.
+
+### My judgment
+
+I confirmed the architecture was:
+
+Browser → SimplyInvest /api → Alpha Vantage
+
+and not:
+
+Browser → Alpha Vantage directly
+
+Manual Deployment Check — Vercel
+
+I added ALPHAVANTAGE_API_KEY as a Vercel Production environment variable and redeployed without exposing the value in the repository.
+
+/api/health
+
+Observed:
+
+{
+  "service": "SimplyInvest",
+  "hasApiKey": true,
+  "upstreamReachable": true,
+  "upstreamStatus": 200,
+  "checkedAt": "2026-09-12T10:29:09.937Z"
+}
+
+Result: Pass
+
+/api/fx
+
+Observed:
+
+{
+  "from": "SGD",
+  "to": "USD",
+  "rate": 0.78923521,
+  "lastRefreshed": "2026-09-12 10:28:13",
+  "timeZone": "UTC"
+}
+
+Result: Pass
+
+/api/quote?symbol=AAPL
+
+Observed:
+
+{
+  "symbol": "AAPL",
+  "priceUSD": 332.27,
+  "latestTradingDay": "2026-09-11"
+}
+
+Result: Pass
+
+Unsupported-symbol guardrail
+
+I manually called:
+
+/api/quote?symbol=TSLA
+
+Observed:
+
+{
+  "error": "Unsupported symbol \"TSLA\". Supported symbols are: AAPL, MSFT, NVDA",
+  "code": "INVALID_SYMBOL"
+}
+
+Result: Pass
+
+My judgment
+
+The deployed back end was using the configured secret, could reach Alpha Vantage, returned normalized data, and enforced the intended product scope.
+
+Manual Happy-Path UI Check
+
+Using the deployed app with:
+
+SGD amount: S$1,000
+
+Company: Apple
+
+SGD/USD rate: approximately 0.7892
+
+AAPL latest available price: $332.27
+
+the UI displayed approximately:
+
+2.375 shares
+
+This replaced the earlier mock result of approximately 3.28 shares.
+
+I also confirmed that the interface still stated that this was a simulation and that no real money was invested.
+
+Result: Pass
+
+---
+
+## Manual Mobile Check
+
+I tested the deployed product at a narrow mobile viewport.
+
+### Observed:
+
+the investment amount remained readable,
+
+quick amount choices remained usable,
+
+company cards stacked vertically,
+
+the selected state remained clear,
+
+no horizontal scrolling was required.
+
+Result: Pass
+
+Manual Failure-State Check — Loading
+
+I used Chrome DevTools Network throttling with cache disabled to slow market-data requests.
+
+I confirmed that the requests were delayed and inspected the UI while data was being loaded.
+
+### Observation
+
+The network throttling worked, but my screenshots did not clearly capture the dedicated loading message before the market data arrived.
+
+Result
+
+Partly Met / evidence incomplete
+
+### My judgment
+
+The loading state exists in the implementation, but I do not have strong visual evidence from this manual test. I did not fabricate a successful test result.
+
+I did not deliberately simulate the remaining Empty Data, Provider Error, or Provider Unreachable states in Production.
+
+Key Human Decisions Recorded in This Log
+
+I stopped adding educational content when the product became understandable through the flow itself.
+
+I manually verified the Alpha Vantage response shape before asking the agent to write provider parsing logic.
+
+I rejected silent stale-cache fallback after provider failure.
+
+I rejected generating a replacement provider timestamp from server time.
+
+I kept missing provider metadata as null rather than making it look valid.
+
+I removed unnecessary background quote prefetching.
+
+I verified the API key remained server-side.
+
+I checked the deployed /api/health, /api/fx, /api/quote, and unsupported-symbol behavior manually.
+
+I recorded the loading-state test as incomplete rather than claiming a pass without evidence.
+
+
+---
+
+
+## Current Product State
+
+SimplyInvest now:
+
+uses Alpha Vantage for SGD/USD and stock-price data,
+
+supports AAPL, MSFT, and NVDA,
+
+calculates estimated shares locally from the fetched market data,
+
+keeps the API credential server-side,
+
+exposes /api/health,
+
+does not execute real investments,
+
+remains an educational three-screen simulation,
+
+is deployed on Vercel.
+
+The main remaining work for submission is to complete assessment.md, perform final repository/deployment QA, and submit the live URL and public GitHub repository.
