@@ -6,6 +6,8 @@
 
 # Prompt 1
 
+## Prompt
+
 ROLE
 
 You are a senior product designer and front-end engineer specializing
@@ -116,6 +118,8 @@ through a server-side API.
 
 # Prompt 2
 
+## Prompt
+
 Review the current SimplyInvest interface only for first-time comprehension.
 
 The target user has little or no investing experience.
@@ -158,6 +162,8 @@ I kept the overall structure because the core task was understandable quickly. I
 I decided to simplify necessary financial terminology rather than remove it, because the user still needs to understand what a share price and currency conversion mean.
 
 #Prompt 3
+
+## Prompt
 
 Review all wording in the current SimplyInvest interface for a user who has
 never invested before.
@@ -244,6 +250,8 @@ Do not redesign the visual structure unless a small wording adjustment requires 
 
 
 # Prompt 4
+
+## Prompt
 
 Review and optimize the current SimplyInvest interface specifically for a mobile viewport of approximately 390px width.
 
@@ -364,6 +372,8 @@ Only make responsive layout, spacing, typography, wrapping and tap-target improv
 
 
 #Prompt 5
+
+## Prompt
 
 Perform a final front-end QA review of the current SimplyInvest prototype before I connect it to a real market-data API.
 
@@ -525,3 +535,428 @@ After making the fixes, summarize:
 2. Which issues you changed.
 3. Which parts already passed and were left unchanged.
 4. Any remaining limitation that should be addressed when real API data is connected.
+
+
+# Prompt 6
+
+## Prompt
+
+ROLE
+
+You are a senior full-stack developer working in my existing SimplyInvest
+React and TypeScript project.
+
+Do not redesign the existing interface.
+Do not rewrite the product.
+Add a secure back end that replaces the current mock market-data values
+with real external data from Alpha Vantage.
+
+GOAL
+
+SimplyInvest currently helps a complete beginner answer:
+
+"If I invest this amount of SGD in this company,
+approximately how many shares could that represent?"
+
+The current front end uses mock:
+
+1. SGD to USD exchange rate
+2. stock price
+
+Replace these two claims with real Alpha Vantage data while preserving
+the existing three-screen user experience.
+
+Create three serverless functions:
+
+1. api/fx.js
+2. api/quote.js
+3. api/health.js
+
+
+--------------------------------
+1. API/FX.JS
+--------------------------------
+
+Fetch SGD to USD using Alpha Vantage:
+
+function=CURRENCY_EXCHANGE_RATE
+from_currency=SGD
+to_currency=USD
+
+Read the credential only from:
+
+process.env.ALPHAVANTAGE_API_KEY
+
+From the actual response, use:
+
+"Realtime Currency Exchange Rate"
+→ "5. Exchange Rate"
+→ "6. Last Refreshed"
+→ "7. Time Zone"
+
+Return only normalized fields needed by the front end.
+
+For example:
+
+{
+  "from": "SGD",
+  "to": "USD",
+  "rate": 0.78925131,
+  "lastRefreshed": "2026-09-12 09:30:16",
+  "timeZone": "UTC"
+}
+
+Convert numeric strings into JavaScript numbers before returning them.
+
+Do not return bid price, ask price or other unused upstream fields.
+
+
+--------------------------------
+2. API/QUOTE.JS
+--------------------------------
+
+Accept only these stock symbols:
+
+AAPL
+MSFT
+NVDA
+
+Reject unsupported symbols with a clear 400 response.
+
+Fetch Alpha Vantage GLOBAL_QUOTE for the selected symbol.
+
+Read the credential only from:
+
+process.env.ALPHAVANTAGE_API_KEY
+
+From the actual response, use:
+
+"Global Quote"
+→ "01. symbol"
+→ "05. price"
+→ "07. latest trading day"
+
+Return only normalized fields needed by the front end.
+
+For example:
+
+{
+  "symbol": "AAPL",
+  "priceUSD": 332.27,
+  "latestTradingDay": "2026-09-11"
+}
+
+Convert the price from text into a JavaScript number.
+
+Do not return:
+
+- open
+- high
+- low
+- volume
+- previous close
+- change
+- change percent
+
+SimplyInvest is an educational investment simulator,
+not a trading terminal.
+
+
+--------------------------------
+3. API/HEALTH.JS
+--------------------------------
+
+Create:
+
+/api/health
+
+It should report:
+
+- service name: SimplyInvest
+- whether ALPHAVANTAGE_API_KEY is configured
+- whether Alpha Vantage can be reached
+- upstream HTTP status if available
+- checkedAt timestamp
+
+Never return:
+
+- the credential
+- any part of the credential
+- credential length
+- credential prefix
+
+
+--------------------------------
+FRONT-END INTEGRATION
+--------------------------------
+
+Replace the current mock exchange rate and mock stock price with calls to:
+
+/api/fx
+
+and:
+
+/api/quote?symbol=AAPL
+
+or MSFT / NVDA depending on the selected company.
+
+Never call Alpha Vantage directly from browser code.
+
+Calculate the simulated investment transparently:
+
+USD value =
+SGD investment amount × SGD-to-USD exchange rate
+
+Estimated shares =
+USD value ÷ latest available stock price
+
+Example using the real response provided in CONTEXT:
+
+S$1,000
+× 0.78925131
+=
+US$789.25131
+
+US$789.25131
+÷ US$332.27
+≈
+2.375 AAPL shares
+
+Round values only for display.
+Keep sufficient precision internally for the calculation.
+
+
+--------------------------------
+PRODUCT WORDING
+--------------------------------
+
+Replace any current "Mock Market Data" wording now that external data is used.
+
+Keep the product clearly labelled as:
+
+"Educational Simulation"
+
+Clearly state:
+
+"No real money is invested."
+
+For stock data, use:
+
+"Latest available price"
+
+Do not use:
+
+"Live price"
+"Real-time stock price"
+
+For FX data, show the exchange rate and its last-refreshed information
+in a simple beginner-friendly way.
+
+Keep explanations short.
+
+Do not introduce financial jargon.
+
+
+--------------------------------
+FAILURE STATES
+--------------------------------
+
+The front end must distinguish these four situations:
+
+LOADING
+
+"Getting the latest available market data..."
+
+EMPTY DATA
+
+"We could not find market data for this company."
+
+PROVIDER REFUSED OR RETURNED AN ERROR
+
+"The market data provider could not complete this request."
+
+PROVIDER UNREACHABLE
+
+"We cannot reach the market data service right now. Please try again later."
+
+Do not use one generic spinner or one generic error for all situations.
+
+Never display:
+
+undefined
+NaN
+null
+raw provider error messages
+
+
+--------------------------------
+SERVER-SIDE SAFETY
+--------------------------------
+
+Before each Alpha Vantage request:
+
+Check:
+
+process.env.ALPHAVANTAGE_API_KEY
+
+If it is missing or empty:
+
+- return HTTP 503
+- name ALPHAVANTAGE_API_KEY as the missing variable
+- do not call Alpha Vantage
+
+After each upstream request:
+
+- check response.ok before assuming the request succeeded
+- inspect the JSON body before assuming it contains valid market data
+
+Alpha Vantage may return an HTTP success response containing a provider
+message instead of the expected market-data structure.
+
+Detect cases where the expected response object is missing.
+
+Do not let an invalid provider response become:
+
+undefined
+NaN
+or a misleading investment result.
+
+
+--------------------------------
+CACHING
+--------------------------------
+
+Add Cache-Control headers so SimplyInvest does not call Alpha Vantage
+for every amount change or page view.
+
+The user's investment amount should be calculated locally from the
+already-fetched rate and stock price.
+
+Do not fetch new market data every time the user changes S$1,000 to S$2,000.
+
+Use a reasonable cache for:
+
+- FX data
+- stock quote data
+
+Keep the implementation simple and explain the cache duration you chose.
+
+
+--------------------------------
+OUTPUT
+--------------------------------
+
+Create:
+
+api/fx.js
+api/quote.js
+api/health.js
+
+The api folder must be at the PROJECT ROOT,
+beside package.json.
+
+Correct:
+
+project/
+  api/
+    fx.js
+    quote.js
+    health.js
+  src/
+  package.json
+
+Incorrect:
+
+project/
+  src/
+    api/
+
+Make sure package.json contains:
+
+"type": "module"
+
+Preserve:
+
+- Investment screen
+- Review screen
+- Success screen
+- current mobile responsiveness
+- existing beginner-friendly visual design
+
+
+--------------------------------
+GUARDRAILS
+--------------------------------
+
+Never write ALPHAVANTAGE_API_KEY into any file.
+
+Never create:
+
+VITE_ALPHAVANTAGE_API_KEY
+
+Never expose the credential in:
+
+- browser code
+- response
+- log
+- README
+- comment
+
+Do not add:
+
+- database
+- login
+- brokerage
+- real transaction
+- portfolio
+- charts
+- news
+- watchlists
+- recommendations
+- buy/sell functionality
+- crypto
+- additional screens
+
+Do not redesign SimplyInvest.
+
+Do not add new npm packages unless absolutely necessary.
+
+Keep the scope focused on the existing beginner investment simulation.
+
+
+--------------------------------
+CONTEXT — REAL API RESPONSES
+--------------------------------
+
+REAL SGD → USD RESPONSE:
+
+{
+  "Realtime Currency Exchange Rate": {
+    "1. From_Currency Code": "SGD",
+    "2. From_Currency Name": "Singapore Dollar",
+    "3. To_Currency Code": "USD",
+    "4. To_Currency Name": "United States Dollar",
+    "5. Exchange Rate": "0.78925131",
+    "6. Last Refreshed": "2026-09-12 09:30:16",
+    "7. Time Zone": "UTC",
+    "8. Bid Price": "0.78924689",
+    "9. Ask Price": "0.78925964"
+  }
+}
+
+REAL AAPL GLOBAL_QUOTE RESPONSE:
+
+{
+  "Global Quote": {
+    "01. symbol": "AAPL",
+    "02. open": "327.4500",
+    "03. high": "336.2200",
+    "04. low": "326.3000",
+    "05. price": "332.2700",
+    "06. volume": "50716865",
+    "07. latest trading day": "2026-09-11",
+    "08. previous close": "326.5700",
+    "09. change": "5.7000",
+    "10. change percent": "1.7454%"
+  }
+}
