@@ -241,3 +241,123 @@ Do not change the mock data.
 Do not connect an API yet.
 Do not add charts, news, portfolio features, recommendations, or trading tools.
 Do not redesign the visual structure unless a small wording adjustment requires it.
+
+
+# Prompt 4
+
+Review and optimize the current SimplyInvest interface specifically for a mobile viewport of approximately 390px width.
+
+Do not redesign the product.
+Do not add new features.
+Do not change the calculation logic or mock data.
+
+Keep the existing three-screen flow:
+
+1. Investment
+2. Review
+3. Success
+
+GOAL
+
+A complete beginner should be able to use SimplyInvest comfortably on a phone with one hand, without zooming or horizontal scrolling.
+
+MOBILE REQUIREMENTS
+
+Across all three screens:
+
+- No horizontal scrolling.
+- No clipped or overlapping text.
+- No financial number should overflow its container.
+- Primary buttons should be easy to tap.
+- Keep comfortable spacing between interactive elements.
+- Keep text readable without shrinking important information too much.
+- Preserve the existing desktop experience.
+
+SCREEN 1 — INVESTMENT
+
+Optimize:
+
+1. Investment amount input
+   - Keep it easy to tap and edit.
+   - Make SGD clearly visible.
+   - Ensure large amounts do not overflow.
+
+2. Quick amount choices
+   - S$100
+   - S$500
+   - S$1,000
+   - S$2,500
+   - S$5,000
+
+   Allow them to wrap naturally into multiple rows if necessary.
+   Do not create horizontal scrolling.
+
+3. Company selection
+   - Apple
+   - Microsoft
+   - NVIDIA
+
+   On mobile, adapt the cards so they remain easy to compare and select.
+   Prefer a vertical stack or another simple responsive arrangement rather than squeezing three cards into one row.
+
+   Keep:
+   - company name as primary
+   - stock symbol as secondary
+   - stock price readable
+   - selected state obvious
+
+4. Estimated shares section
+   - Keep "You could own approximately X shares" as the strongest visual result.
+   - Keep the selected company clearly connected to the number.
+   - Keep currency conversion and stock price secondary.
+
+5. CTA
+   - "Review simulation"
+   - Make it full-width or appropriately prominent on mobile.
+   - Keep it easy to reach and tap.
+
+SCREEN 2 — REVIEW
+
+Use a clear vertical mobile layout.
+
+Keep the information in this order:
+
+1. SGD amount
+2. Selected company
+3. Currency conversion
+4. Stock price
+5. Estimated shares
+
+Make sure:
+- labels remain close to the values they explain,
+- long financial values do not overflow,
+- estimated shares remains visually prominent,
+- "Change inputs" and "Confirm simulation" are easy to use on mobile.
+
+If two buttons do not fit comfortably side by side, stack them.
+
+SCREEN 3 — SUCCESS
+
+Keep:
+- "Simulation complete"
+- estimated shares as the primary result,
+- clear statement that no real money was invested,
+- "Start another simulation"
+
+Make sure the result card and primary CTA fit comfortably on a 390px screen.
+
+GUARDRAILS
+
+Do not add:
+- a mobile navigation menu,
+- bottom navigation,
+- charts,
+- news,
+- portfolio features,
+- recommendations,
+- additional screens,
+- new educational sections.
+
+Do not remove important beginner-friendly explanations.
+
+Only make responsive layout, spacing, typography, wrapping and tap-target improvements required for mobile usability.
