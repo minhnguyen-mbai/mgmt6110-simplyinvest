@@ -144,6 +144,19 @@ On Screen 1, make the main question and the result the two strongest visual elem
 
 Do not redesign the application if the current structure already supports this goal.
 
+##Came back with:
+
+A clearer hierarchy centred on the amount, company and estimated shares. The previous educational blocks were reduced, and the three screens became more focused on the simulation flow.
+
+##Action: 
+
+I kept the overall structure because the core task was understandable quickly. I identified remaining terminology and mobile-layout issues for the next iterations.
+
+
+##What changed next and why:
+
+I decided to simplify necessary financial terminology rather than remove it, because the user still needs to understand what a share price and currency conversion mean.
+
 #Prompt 3
 
 Review all wording in the current SimplyInvest interface for a user who has
