@@ -361,3 +361,167 @@ Do not add:
 Do not remove important beginner-friendly explanations.
 
 Only make responsive layout, spacing, typography, wrapping and tap-target improvements required for mobile usability.
+
+
+#Prompt 5
+
+Perform a final front-end QA review of the current SimplyInvest prototype before I connect it to a real market-data API.
+
+Do not redesign the application.
+Do not add new features.
+Do not change the mock calculation logic.
+Do not connect any external API yet.
+
+Keep the existing three-screen flow:
+
+1. Investment
+2. Review
+3. Success
+
+GOAL
+
+Confirm that the current prototype is ready for backend integration and that a complete beginner can understand and complete the simulation without financial-market knowledge.
+
+CHECK THE FULL USER FLOW
+
+1. The user enters an SGD amount.
+2. The user chooses Apple, Microsoft, or NVIDIA.
+3. The user sees approximately how many shares that amount could represent.
+4. The user can understand why currency conversion is needed.
+5. The user opens the Review screen.
+6. The user can see the SGD amount, selected company, currency conversion, stock price, and estimated shares.
+7. The user confirms the simulation.
+8. The Success screen clearly states that no real money was invested.
+9. The user can start another simulation.
+
+REVIEW THESE CRITERIA
+
+A. PURPOSE CLARITY
+
+A first-time visitor should understand within a few seconds that SimplyInvest is an educational investment simulation.
+
+The product should answer one simple question:
+
+"If I invest this amount in this company, approximately how many shares could that represent?"
+
+B. BEGINNER LANGUAGE
+
+The user should not need to understand professional trading terminology.
+
+Do not use unnecessary terms such as:
+
+- market order
+- position
+- execution
+- bid
+- ask
+- quote asset
+- base asset
+- order book
+- P&L
+
+Necessary concepts such as:
+- shares
+- stock price
+- stock symbol
+- currency conversion
+
+should be explained briefly in plain language where needed.
+
+C. PRODUCT SCOPE
+
+Confirm that no unnecessary features have been added.
+
+There should be no:
+
+- stock charts
+- news
+- portfolio tracking
+- watchlists
+- stock recommendations
+- ratings
+- risk scores
+- buy/sell orders
+- brokerage connections
+- social features
+- account balances
+- crypto
+- additional screens
+
+D. SIMULATION CLARITY
+
+The user must never believe that SimplyInvest is executing a real investment.
+
+Confirm that:
+
+- the prototype is clearly labelled as an educational simulation,
+- the current market data is clearly identified as mock data,
+- the confirmation CTA says "Confirm simulation",
+- the Success screen explicitly states that no real money was invested,
+- no wording implies that shares were actually purchased.
+
+E. VISUAL HIERARCHY
+
+On the Investment screen, the strongest answer should be:
+
+"You could own approximately X shares"
+
+The entered amount and selected company should clearly connect to that result.
+
+Currency conversion and stock price should remain visible but secondary.
+
+On the Review screen, information should appear in this logical order:
+
+1. SGD amount
+2. Selected company
+3. Currency conversion
+4. Stock price
+5. Estimated shares
+
+On the Success screen, the simulated ownership result should remain the visual focus.
+
+F. MOBILE USABILITY
+
+Check all three screens at approximately 390px width.
+
+Confirm:
+
+- no horizontal scrolling,
+- no clipped text,
+- no overlapping elements,
+- no number overflow,
+- quick amount buttons wrap cleanly,
+- company choices remain easy to select,
+- primary buttons are easy to tap,
+- the Review screen works as a vertical layout,
+- the Success result card fits comfortably,
+- no zooming is required.
+
+G. FUNCTIONAL QA
+
+Check that:
+
+- changing the investment amount updates the calculation,
+- quick amount buttons work,
+- selecting another company updates the result,
+- Review displays the correct selected values,
+- Change inputs returns to the Investment screen,
+- Confirm simulation goes to Success,
+- Start another simulation resets or restarts the flow correctly,
+- no button is broken,
+- no value displays undefined, NaN, null, or an obviously invalid number.
+
+OUTPUT
+
+Fix only issues that fail one of the checks above.
+
+Do not make stylistic changes just for variety.
+
+Do not add anything new.
+
+After making the fixes, summarize:
+
+1. Which issues you found.
+2. Which issues you changed.
+3. Which parts already passed and were left unchanged.
+4. Any remaining limitation that should be addressed when real API data is connected.
