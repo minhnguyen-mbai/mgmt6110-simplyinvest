@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Company } from '../types';
 import { MOCK_COMPANIES, MOCK_EXCHANGE_RATE_SGD_TO_USD, QUICK_PRESET_AMOUNTS } from '../mockData';
-import { ArrowRight, DollarSign, HelpCircle, Check, ArrowRightLeft } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
 interface InvestmentScreenProps {
   sgdAmount: number;
@@ -18,19 +18,46 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
   onSelectCompany,
   onProceed,
 }) => {
-  // Calculations
+  // Local string state to allow natural decimal typing (e.g. "100.", "100.5") without losing characters
+  const [inputVal, setInputVal] = useState<string>(
+    sgdAmount > 0 ? String(sgdAmount) : ''
+  );
+
+  useEffect(() => {
+    const currentNum = parseFloat(inputVal);
+    if (isNaN(currentNum) && sgdAmount > 0) {
+      setInputVal(String(sgdAmount));
+    } else if (!isNaN(currentNum) && currentNum !== sgdAmount) {
+      setInputVal(sgdAmount > 0 ? String(sgdAmount) : '');
+    }
+  }, [sgdAmount]);
+
   const usdAmount = sgdAmount * MOCK_EXCHANGE_RATE_SGD_TO_USD;
-  const estimatedShares = selectedCompany.stockPriceUsd > 0 && usdAmount > 0
-    ? usdAmount / selectedCompany.stockPriceUsd
-    : 0;
+  const estimatedShares =
+    selectedCompany.stockPriceUsd > 0 && usdAmount > 0
+      ? usdAmount / selectedCompany.stockPriceUsd
+      : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/[^0-9.]/g, '');
+    let rawVal = e.target.value.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = rawVal.split('.');
+    if (parts.length > 2) {
+      rawVal = `${parts[0]}.${parts.slice(1).join('')}`;
+    }
+
+    // Limit decimal precision to 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      rawVal = `${parts[0]}.${parts[1].slice(0, 2)}`;
+    }
+
+    setInputVal(rawVal);
+
     const num = parseFloat(rawVal);
-    if (isNaN(num)) {
+    if (isNaN(num) || num <= 0) {
       onAmountChange(0);
     } else {
-      // Limit to sensible educational bounds (e.g. up to 1,000,000)
       onAmountChange(Math.min(num, 1000000));
     }
   };
@@ -38,75 +65,80 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
   const isValidAmount = sgdAmount > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Intro Context Banner */}
-      <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-xs">
-        <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
+    <div className="space-y-4 sm:space-y-5">
+      {/* 1. STRONGEST ELEMENT A: THE MAIN QUESTION */}
+      <section className="bg-white rounded-2xl p-5 sm:p-7 border-2 border-stone-200/90 shadow-xs">
+        <h1 className="text-xl sm:text-3xl font-extrabold text-stone-900 tracking-tight leading-snug">
           How much would you like to invest?
         </h1>
-        <p className="text-stone-600 mt-2 text-sm sm:text-base leading-relaxed">
-          Type an amount in Singapore Dollars (SGD) to see how many shares of a company it represents.
+        <p className="text-stone-600 mt-1.5 text-sm leading-relaxed">
+          Enter an amount in Singapore Dollars (SGD) to see how many shares you could own.
         </p>
 
-        {/* Input Control */}
-        <div className="mt-6">
-          <label htmlFor="sgd-input" className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Investment Amount (SGD)
-          </label>
-          <div className="relative rounded-xl border-2 border-stone-300 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100 transition-all bg-stone-50/50">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-lg select-none">
+        {/* Currency Input Box */}
+        <div className="mt-4 sm:mt-5">
+          <div className="relative rounded-xl border-2 border-stone-300 focus-within:border-emerald-600 focus-within:ring-3 focus-within:ring-emerald-100 transition-all bg-stone-50/70">
+            <span className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-stone-600 font-bold text-lg sm:text-xl select-none">
               S$
             </span>
             <input
               id="sgd-input"
               type="text"
               inputMode="decimal"
-              value={sgdAmount === 0 ? '' : sgdAmount}
+              value={inputVal}
               onChange={handleInputChange}
-              placeholder="e.g. 1000"
-              className="w-full pl-12 pr-16 py-3.5 text-xl sm:text-2xl font-bold text-stone-900 bg-transparent outline-hidden"
+              placeholder="1000"
+              className="w-full pl-11 sm:pl-13 pr-14 sm:pr-16 py-3 sm:py-3.5 text-xl sm:text-3xl font-extrabold text-stone-900 bg-transparent outline-hidden tracking-tight"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-stone-400 bg-stone-200/60 px-2 py-1 rounded">
+            <span className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-500 bg-stone-200/80 px-2 py-1 rounded select-none">
               SGD
             </span>
           </div>
 
-          {/* Quick Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <span className="text-xs text-stone-500 font-medium mr-1">Quick choose:</span>
-            {QUICK_PRESET_AMOUNTS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => onAmountChange(preset)}
-                className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
-                  sgdAmount === preset
-                    ? 'bg-emerald-700 text-white border-emerald-700'
-                    : 'bg-white text-stone-700 border-stone-200 hover:border-stone-400 hover:bg-stone-50'
-                }`}
-              >
-                S$ {preset.toLocaleString()}
-              </button>
-            ))}
+          {/* Quick Preset Buttons - wrap naturally without horizontal scrolling */}
+          <div className="mt-3">
+            <span className="text-xs text-stone-500 font-medium block mb-1.5">Quick choose:</span>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_PRESET_AMOUNTS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setInputVal(String(preset));
+                    onAmountChange(preset);
+                  }}
+                  className={`text-xs px-3.5 py-2 min-h-[40px] rounded-lg border font-semibold transition-colors cursor-pointer flex items-center justify-center ${
+                    sgdAmount === preset
+                      ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                      : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100 hover:border-stone-400 active:bg-stone-200'
+                  }`}
+                >
+                  S$ {preset.toLocaleString()}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Step 2: Choose a Company */}
-      <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+      {/* 2. CHOOSE A COMPANY - Responsive vertical stack on mobile */}
+      <section className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3.5">
           <div>
-            <h2 className="text-lg font-bold text-stone-900">Choose a company</h2>
-            <p className="text-xs text-stone-500 mt-0.5">
-              Select one of three major US companies to simulate owning shares.
+            <h2 className="text-base sm:text-lg font-bold text-stone-900">
+              Choose a company
+            </h2>
+            <p className="text-xs text-stone-500">
+              Select a company to see what your money could buy.
             </p>
           </div>
-          <span className="text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
-            Mock Market Data
+          <span className="self-start sm:self-auto text-[10px] sm:text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
+            Mock Market Prices
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Vertical stack on mobile, 3 columns on tablet/desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
           {MOCK_COMPANIES.map((company) => {
             const isSelected = company.id === selectedCompany.id;
             return (
@@ -114,134 +146,117 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
                 key={company.id}
                 type="button"
                 onClick={() => onSelectCompany(company)}
-                className={`text-left p-4 rounded-xl border-2 transition-all relative flex flex-col justify-between ${
+                className={`text-left p-4 rounded-xl border-2 transition-all relative flex flex-col justify-between cursor-pointer min-h-[72px] sm:min-h-[110px] ${
                   isSelected
-                    ? 'border-emerald-700 bg-emerald-50/40 ring-2 ring-emerald-600/10'
-                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/60'
+                    ? 'border-emerald-700 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-600/20'
+                    : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/80 active:bg-stone-100'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-stone-900 text-base">{company.name}</h3>
-                      <span className="text-xs font-mono font-medium text-stone-500">{company.ticker}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      {/* Primary label: Company name */}
+                      <h3 className="font-bold text-stone-900 text-base leading-tight">
+                        {company.name}
+                      </h3>
+                      {/* Secondary label: Ticker symbol clarified */}
+                      <span className="text-xs text-stone-500 font-medium block mt-0.5">
+                        <span className="font-mono font-semibold text-stone-700">{company.ticker}</span> · stock symbol
+                      </span>
                     </div>
-                    {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-700 text-white flex items-center justify-center">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </div>
 
-                  <p className="text-xs text-stone-600 mt-2 line-clamp-2">
-                    {company.plainDescription}
-                  </p>
+                    {/* Selected Indicator */}
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-emerald-700 text-white'
+                          : 'border border-stone-300 bg-stone-50 text-transparent'
+                      }`}
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-stone-100 flex items-baseline justify-between">
-                  <span className="text-[11px] text-stone-500 font-medium">Stock price:</span>
-                  <div className="text-right">
+                <div className="mt-3 pt-2.5 border-t border-stone-100">
+                  <div className="flex items-baseline justify-between gap-1">
+                    <span className="text-[11px] text-stone-500 font-medium">Stock price:</span>
                     <span className="font-bold text-stone-900 text-sm">
-                      ${company.stockPriceUsd.toFixed(2)}
+                      ${company.stockPriceUsd.toFixed(2)}{' '}
+                      <span className="text-[10px] text-stone-500 font-normal">USD</span>
                     </span>
-                    <span className="text-[10px] text-stone-500 ml-1">USD</span>
                   </div>
+                  <span className="text-[10px] text-stone-400 block text-right">
+                    price for 1 share (mock)
+                  </span>
                 </div>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Real-time Calculation & Beginner Explanation */}
-      <div className="bg-stone-900 text-stone-100 rounded-2xl p-6 border border-stone-800 shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-stone-800">
+      {/* 3. STRONGEST ELEMENT B: THE ESTIMATED RESULT */}
+      <section className="bg-stone-900 text-stone-100 rounded-2xl p-5 sm:p-7 border border-stone-800 shadow-md">
+        {/* Currency conversion context */}
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 pb-3 border-b border-stone-800">
           <div className="flex items-center gap-2">
-            <ArrowRightLeft className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-semibold tracking-wider text-stone-400 uppercase">
-              Currency & Share Estimate
+            <span className="text-[11px] sm:text-xs font-semibold tracking-wider text-emerald-400 uppercase">
+              Currency conversion
             </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-stone-400">
-            <span>SGD to USD exchange rate:</span>
-            <span className="font-mono font-bold text-emerald-400 bg-stone-800 px-2 py-0.5 rounded">
+            <span className="text-xs font-mono font-medium text-stone-300 bg-stone-800 px-2 py-0.5 rounded">
               1 SGD = {MOCK_EXCHANGE_RATE_SGD_TO_USD} USD
             </span>
           </div>
+          <span className="text-xs text-stone-400">
+            US shares are priced in US dollars.
+          </span>
         </div>
 
-        {/* Primary Result Headline */}
-        <div className="py-5">
-          <p className="text-xs sm:text-sm text-stone-400 font-medium">
-            Based on your S$ {sgdAmount.toLocaleString()} SGD simulation:
+        <div className="py-4 sm:py-5">
+          <p className="text-xs sm:text-sm text-stone-300 font-medium">
+            You could own approximately
           </p>
-          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-            <span className="text-stone-300 text-lg sm:text-xl font-medium">
-              You could own approximately
+          <div className="mt-1 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+            <span className="text-3xl sm:text-5xl font-extrabold text-emerald-400 tracking-tight break-words">
+              {isValidAmount ? estimatedShares.toFixed(2) : '0.00'} shares
             </span>
-            <span className="text-3xl sm:text-4xl font-extrabold text-emerald-400 tracking-tight">
-              {isValidAmount ? estimatedShares.toFixed(3) : '0.000'} shares
+            <span className="text-stone-300 text-base sm:text-xl font-semibold mt-0.5 sm:mt-0">
+              of {selectedCompany.name} ({selectedCompany.ticker})
             </span>
           </div>
-          <p className="text-xs text-stone-400 mt-1">
-            of <strong className="text-stone-200">{selectedCompany.name} ({selectedCompany.ticker})</strong>
+
+          <p className="text-xs text-stone-400 mt-2.5 leading-relaxed break-words">
+            Your S$ {sgdAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} SGD converts to approximately ${usdAmount.toFixed(2)} USD. At ${selectedCompany.stockPriceUsd.toFixed(2)} USD per share, that equals approximately {isValidAmount ? estimatedShares.toFixed(2) : '0.00'} shares.
           </p>
         </div>
 
-        {/* Educational Breakdown */}
-        <div className="bg-stone-800/80 rounded-xl p-4 border border-stone-700/60 text-xs sm:text-sm text-stone-300 space-y-2">
-          <div className="font-semibold text-stone-200 flex items-center gap-1.5">
-            <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
-            <span>How this is calculated in 2 simple steps:</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="bg-stone-900/60 p-2.5 rounded-lg border border-stone-700/40">
-              <span className="text-[11px] text-stone-400 block mb-0.5">1. Convert to USD</span>
-              <span className="font-mono text-stone-200">
-                S$ {sgdAmount.toLocaleString()} × {MOCK_EXCHANGE_RATE_SGD_TO_USD} = ${usdAmount.toFixed(2)} USD
-              </span>
-              <p className="text-[11px] text-stone-400 mt-1">
-                US stocks trade in US Dollars, so your Singapore Dollars convert first.
-              </p>
-            </div>
-            <div className="bg-stone-900/60 p-2.5 rounded-lg border border-stone-700/40">
-              <span className="text-[11px] text-stone-400 block mb-0.5">2. Divide by share price</span>
-              <span className="font-mono text-stone-200">
-                ${usdAmount.toFixed(2)} ÷ ${selectedCompany.stockPriceUsd.toFixed(2)} = {estimatedShares.toFixed(3)}
-              </span>
-              <p className="text-[11px] text-stone-400 mt-1">
-                You can own fractional shares (pieces of a share), so your exact dollar amount works.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA Button */}
-        <div className="mt-6 pt-4 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-xs text-stone-400">
+        {/* CTA Button: prominent & easy to tap on mobile */}
+        <div className="pt-4 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-stone-400 text-center sm:text-left w-full sm:w-auto">
             {isValidAmount ? (
-              <span>Ready to review this simulation step-by-step?</span>
+              <span>Review your simulation details before confirming.</span>
             ) : (
-              <span className="text-amber-400">Please enter an amount greater than 0 SGD to continue.</span>
+              <span className="text-amber-400 font-medium">Enter an amount above S$ 0 to continue.</span>
             )}
-          </div>
+          </p>
 
           <button
-            id="see-investment-cta"
+            id="review-simulation-cta"
             type="button"
             onClick={onProceed}
             disabled={!isValidAmount}
-            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`w-full sm:w-auto px-7 py-3.5 sm:py-3 rounded-xl font-bold text-base sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] ${
               isValidAmount
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:shadow-lg cursor-pointer'
+                ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-md cursor-pointer'
                 : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed'
             }`}
           >
-            <span>See investment</span>
+            <span>Review simulation</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

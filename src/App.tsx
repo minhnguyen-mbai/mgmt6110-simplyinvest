@@ -43,17 +43,16 @@ export default function App() {
 
   const handleResetSimulation = () => {
     setCurrentScreen('investment');
-    // Keep or reset values cleanly
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="min-h-screen bg-stone-100/70 text-stone-900 flex flex-col">
+    <div className="min-h-screen bg-stone-100/70 text-stone-900 flex flex-col overflow-x-hidden">
       {/* Header with logo, tagline, MGMT6110 badge, and 3-step indicator */}
       <Header currentScreen={currentScreen} />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
         <AnimatePresence mode="wait">
           {currentScreen === 'investment' && (
             <motion.div
@@ -116,7 +115,7 @@ export default function App() {
 
       {/* Minimal Footer */}
       <footer className="border-t border-stone-200 bg-white py-4 mt-auto">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500 text-center sm:text-left">
           <div>
             <span className="font-semibold text-stone-700">SimplyInvest</span> — Understand before you invest.
           </div>
