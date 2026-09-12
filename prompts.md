@@ -1052,3 +1052,66 @@ Do not change the front-end design.
 Do not modify quote.js or health.js in this task.
 
 After the change, briefly state exactly what changed and why.
+
+
+## Prompt 8
+
+### Prompt
+
+Review only api/quote.js.
+
+Do not redesign the application.
+Do not change any other file unless required for compatibility.
+
+The endpoint is mostly correct, but fix these two data-integrity issues.
+
+1. DO NOT SILENTLY SERVE STALE CACHE ON PROVIDER FAILURE
+
+Currently, when Alpha Vantage returns Note/Information or when the fetch
+throws an error, the endpoint may return cached quote data with HTTP 200.
+
+Remove this silent stale-cache fallback.
+
+A cached quote may only be returned through the normal cache path while
+it is still within the intended cache freshness period.
+
+If Alpha Vantage refuses or rate-limits the request, return the existing
+provider-error response.
+
+If Alpha Vantage is unreachable, return the existing
+PROVIDER_UNREACHABLE response.
+
+Do not make stale stock-price data look like a successful fresh response.
+
+2. DO NOT INVENT OR SUBSTITUTE MISSING TRADING-DAY METADATA
+
+Change:
+
+latestTradingDay: rawQuote['07. latest trading day'] || ''
+
+to:
+
+latestTradingDay: rawQuote['07. latest trading day'] || null
+
+If Alpha Vantage does not provide the latest trading day, preserve null.
+
+GUARDRAILS
+
+Keep:
+- AAPL / MSFT / NVDA whitelist
+- invalid-symbol validation
+- process.env.ALPHAVANTAGE_API_KEY
+- current normalized response structure
+- price parsing and validation
+- response.ok check
+- provider-message detection
+- timeout handling
+- existing cache duration
+- Cache-Control headers
+
+Do not expose the API key.
+Do not add packages.
+Do not modify fx.js or health.js.
+Do not redesign the front end.
+
+After the change, briefly state exactly what changed and why.
