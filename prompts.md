@@ -112,3 +112,34 @@ This is an educational simulation for MGMT6110.
 The current version deliberately uses mock market data.
 A later step will replace those claims with real external data
 through a server-side API.
+
+
+# Prompt 2
+
+Review the current SimplyInvest interface only for first-time comprehension.
+
+The target user has little or no investing experience.
+
+The user should understand within five seconds:
+
+1. this is an educational investment simulation,
+2. they enter an amount of money,
+3. they choose a company,
+4. the product shows approximately how many shares that amount could represent.
+
+Improve the wording and visual hierarchy only where necessary.
+
+Keep:
+- the existing three-screen flow,
+- the current layout direction,
+- the company choices,
+- the simulation concept.
+
+Do not add new features.
+Do not add charts, news, portfolio features, recommendations, or educational lessons.
+
+Prioritize one clear job per screen.
+
+On Screen 1, make the main question and the result the two strongest visual elements.
+
+Do not redesign the application if the current structure already supports this goal.
