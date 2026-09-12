@@ -4,9 +4,9 @@
 **Course:** MGMT6110 Human-AI Collaboration
 **Problem Set 2:** SimplyInvest
 
-# Prompt 1
+## Prompt 1
 
-## Prompt
+### Prompt
 
 ROLE
 
@@ -116,9 +116,9 @@ A later step will replace those claims with real external data
 through a server-side API.
 
 
-# Prompt 2
+## Prompt 2
 
-## Prompt
+### Prompt
 
 Review the current SimplyInvest interface only for first-time comprehension.
 
@@ -152,18 +152,18 @@ Do not redesign the application if the current structure already supports this g
 
 A clearer hierarchy centred on the amount, company and estimated shares. The previous educational blocks were reduced, and the three screens became more focused on the simulation flow.
 
-##Action: 
+### Action: 
 
 I kept the overall structure because the core task was understandable quickly. I identified remaining terminology and mobile-layout issues for the next iterations.
 
 
-##What changed next and why:
+### What changed next and why:
 
 I decided to simplify necessary financial terminology rather than remove it, because the user still needs to understand what a share price and currency conversion mean.
 
-#Prompt 3
+##Prompt 3
 
-## Prompt
+### Prompt
 
 Review all wording in the current SimplyInvest interface for a user who has
 never invested before.
@@ -249,9 +249,9 @@ Do not add charts, news, portfolio features, recommendations, or trading tools.
 Do not redesign the visual structure unless a small wording adjustment requires it.
 
 
-# Prompt 4
+## Prompt 4
 
-## Prompt
+### Prompt
 
 Review and optimize the current SimplyInvest interface specifically for a mobile viewport of approximately 390px width.
 
@@ -371,9 +371,9 @@ Do not remove important beginner-friendly explanations.
 Only make responsive layout, spacing, typography, wrapping and tap-target improvements required for mobile usability.
 
 
-#Prompt 5
+## Prompt 5
 
-## Prompt
+### Prompt
 
 Perform a final front-end QA review of the current SimplyInvest prototype before I connect it to a real market-data API.
 
@@ -536,10 +536,35 @@ After making the fixes, summarize:
 3. Which parts already passed and were left unchanged.
 4. Any remaining limitation that should be addressed when real API data is connected.
 
+--- 
 
-# Prompt 6
+## Manual Check — Verify Alpha Vantage Response
 
-## Prompt
+Before asking the agent to build the back end, I called the Alpha Vantage
+endpoints manually.
+
+I verified that:
+
+- SGD to USD exchange rate is under:
+  `Realtime Currency Exchange Rate → 5. Exchange Rate`
+
+- FX refresh time is under:
+  `6. Last Refreshed`
+
+- AAPL stock price is under:
+  `Global Quote → 05. price`
+
+- Stock price date is under:
+  `07. latest trading day`
+
+I did this before prompting because I did not want the agent to guess
+the API response structure.
+
+---
+
+## Prompt 6
+
+### Prompt
 
 ROLE
 
