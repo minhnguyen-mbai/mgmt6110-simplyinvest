@@ -8,6 +8,7 @@ interface SuccessScreenProps {
   sgdToUsdRate: number;
   usdAmount: number;
   estimatedShares: number;
+  stockPriceUsd: number;
   onReset: () => void;
 }
 
@@ -17,8 +18,14 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
   sgdToUsdRate,
   usdAmount,
   estimatedShares,
+  stockPriceUsd,
   onReset,
 }) => {
+  const formatSharesDisplay = (shares: number) => {
+    if (shares <= 0) return '0.00';
+    return shares < 10 ? shares.toFixed(3) : shares.toFixed(2);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* 1. Mandatory Safeguard Banner */}
@@ -29,7 +36,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
             No real money was invested.
           </h2>
           <p className="text-xs sm:text-sm text-amber-800 mt-0.5 leading-relaxed">
-            This is an educational simulation using mock market data. No real funds were used and no real transactions were made.
+            This is an educational simulation. No real funds were used and no real transactions were made.
           </p>
         </div>
       </div>
@@ -47,7 +54,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
           Here is what your simulated money represents.
         </p>
 
-        {/* Central Result Box - Optimized for ~390px */}
+        {/* Central Result Box */}
         <div className="mt-5 sm:mt-6 p-5 sm:p-6 rounded-2xl bg-stone-900 text-stone-100 max-w-lg mx-auto shadow-md">
           <span className="text-[11px] sm:text-xs font-semibold text-stone-400 uppercase tracking-wider block">
             Simulated Result
@@ -56,7 +63,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
             You could own approximately
           </p>
           <div className="mt-1 text-4xl sm:text-5xl font-extrabold text-emerald-400 tracking-tight break-words">
-            {estimatedShares.toFixed(2)} shares
+            {formatSharesDisplay(estimatedShares)} shares
           </div>
           <div className="mt-1.5">
             <span className="text-stone-200 text-base sm:text-lg font-semibold block leading-tight">
@@ -67,7 +74,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
             </span>
           </div>
 
-          {/* Breakdown items - stacked on mobile, 2 columns on tablet */}
+          {/* Breakdown items */}
           <div className="mt-5 pt-4 border-t border-stone-800 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-xs">
             <div className="bg-stone-800/50 p-2.5 rounded-lg">
               <span className="text-stone-400 block text-[11px]">Simulated Amount</span>
@@ -77,16 +84,16 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
               <span className="text-stone-400 block text-[11px] mt-0.5">≈ ${usdAmount.toFixed(2)} USD</span>
             </div>
             <div className="bg-stone-800/50 p-2.5 rounded-lg">
-              <span className="text-stone-400 block text-[11px]">Mock Stock Price</span>
+              <span className="text-stone-400 block text-[11px]">Latest Available Price</span>
               <span className="font-bold text-stone-100 text-sm">
-                ${selectedCompany.stockPriceUsd.toFixed(2)} USD
+                ${stockPriceUsd.toFixed(2)} USD
               </span>
-              <span className="text-stone-400 block text-[11px] mt-0.5">1 SGD = {sgdToUsdRate.toFixed(2)} USD</span>
+              <span className="text-stone-400 block text-[11px] mt-0.5">1 SGD = {sgdToUsdRate.toFixed(4)} USD</span>
             </div>
           </div>
         </div>
 
-        {/* CTA: Start another simulation - full width on mobile */}
+        {/* CTA: Start another simulation */}
         <div className="mt-6 sm:mt-8 pt-2 sm:pt-4">
           <button
             id="start-another-simulation-cta"

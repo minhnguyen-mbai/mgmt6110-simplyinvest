@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen }) => {
           <div className="flex items-start sm:items-center gap-1.5 leading-snug">
             <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5 sm:mt-0" />
             <span>
-              <strong>Educational practice:</strong> Uses mock market data. No real money or trades.
+              <strong>Educational Simulation:</strong> No real money is invested.
             </span>
           </div>
           <span className="hidden sm:inline-block text-[11px] font-mono text-amber-700 font-medium shrink-0">

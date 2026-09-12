@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Company } from '../types';
-import { MOCK_COMPANIES, MOCK_EXCHANGE_RATE_SGD_TO_USD, QUICK_PRESET_AMOUNTS } from '../mockData';
-import { ArrowRight, Check } from 'lucide-react';
+import { Company, FxData, QuoteData, MarketDataStatusType } from '../types';
+import { COMPANIES, QUICK_PRESET_AMOUNTS } from '../mockData';
+import { ArrowRight, Check, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
 
 interface InvestmentScreenProps {
   sgdAmount: number;
@@ -9,6 +9,11 @@ interface InvestmentScreenProps {
   selectedCompany: Company;
   onSelectCompany: (company: Company) => void;
   onProceed: () => void;
+  fxData: FxData | null;
+  quoteData: QuoteData | null;
+  quotesMap: Record<string, QuoteData | undefined>;
+  status: MarketDataStatusType;
+  onRetry: () => void;
 }
 
 export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
@@ -17,8 +22,12 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
   selectedCompany,
   onSelectCompany,
   onProceed,
+  fxData,
+  quoteData,
+  quotesMap,
+  status,
+  onRetry,
 }) => {
-  // Local string state to allow natural decimal typing (e.g. "100.", "100.5") without losing characters
   const [inputVal, setInputVal] = useState<string>(
     sgdAmount > 0 ? String(sgdAmount) : ''
   );
@@ -32,22 +41,23 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
     }
   }, [sgdAmount]);
 
-  const usdAmount = sgdAmount * MOCK_EXCHANGE_RATE_SGD_TO_USD;
+  // Rate & Stock Price from external API
+  const fxRate = fxData?.rate ?? 0;
+  const activeStockPrice = quoteData?.priceUSD ?? selectedCompany.stockPriceUsd ?? 0;
+
+  // Real calculations
+  const usdAmount = sgdAmount > 0 && fxRate > 0 ? sgdAmount * fxRate : 0;
   const estimatedShares =
-    selectedCompany.stockPriceUsd > 0 && usdAmount > 0
-      ? usdAmount / selectedCompany.stockPriceUsd
-      : 0;
+    activeStockPrice > 0 && usdAmount > 0 ? usdAmount / activeStockPrice : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let rawVal = e.target.value.replace(/[^0-9.]/g, '');
-    
-    // Prevent multiple decimal points
+
     const parts = rawVal.split('.');
     if (parts.length > 2) {
       rawVal = `${parts[0]}.${parts.slice(1).join('')}`;
     }
 
-    // Limit decimal precision to 2 decimal places
     if (parts.length === 2 && parts[1].length > 2) {
       rawVal = `${parts[0]}.${parts[1].slice(0, 2)}`;
     }
@@ -63,10 +73,109 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
   };
 
   const isValidAmount = sgdAmount > 0;
+  const hasMarketData = fxRate > 0 && activeStockPrice > 0;
+  const canProceed = isValidAmount && hasMarketData && status !== 'loading';
+
+  // Format share count display cleanly (2 or 3 decimals if fractional)
+  const formatSharesDisplay = (shares: number) => {
+    if (shares <= 0) return '0.00';
+    return shares < 10 ? shares.toFixed(3) : shares.toFixed(2);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* 1. STRONGEST ELEMENT A: THE MAIN QUESTION */}
+      {/* Dynamic Status / Error Banner (when not idle / normal) */}
+      {status === 'loading' && (
+        <div
+          id="market-status-loading"
+          className="bg-blue-50 border border-blue-200/90 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-xs sm:text-sm text-blue-900 shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
+            <span className="font-medium">Getting the latest available market data...</span>
+          </div>
+          <span className="text-[11px] text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded font-mono shrink-0">
+            Alpha Vantage
+          </span>
+        </div>
+      )}
+
+      {status === 'empty' && (
+        <div
+          id="market-status-empty"
+          className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-amber-950 shadow-xs"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold">We could not find market data for this company.</p>
+              <p className="text-amber-800 text-xs mt-0.5">
+                The market data service did not return an available price for this asset.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="self-start sm:self-auto px-3 py-1.5 bg-amber-200 hover:bg-amber-300 active:bg-amber-400 text-amber-950 font-semibold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try again</span>
+          </button>
+        </div>
+      )}
+
+      {status === 'provider_error' && (
+        <div
+          id="market-status-provider-error"
+          className="bg-rose-50 border border-rose-300 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-rose-950 shadow-xs"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold">The market data provider could not complete this request.</p>
+              <p className="text-rose-800 text-xs mt-0.5">
+                This may occur if the market provider rate limit was reached or the service is busy.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="self-start sm:self-auto px-3 py-1.5 bg-rose-200 hover:bg-rose-300 active:bg-rose-400 text-rose-950 font-semibold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try again</span>
+          </button>
+        </div>
+      )}
+
+      {status === 'unreachable' && (
+        <div
+          id="market-status-unreachable"
+          className="bg-stone-100 border border-stone-300 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-stone-900 shadow-xs"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-stone-600 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold">We cannot reach the market data service right now. Please try again later.</p>
+              <p className="text-stone-600 text-xs mt-0.5">
+                Please check your network connection or try refreshing the request.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="self-start sm:self-auto px-3 py-1.5 bg-stone-200 hover:bg-stone-300 active:bg-stone-400 text-stone-900 font-semibold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try again</span>
+          </button>
+        </div>
+      )}
+
+      {/* 1. THE MAIN QUESTION */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 border-2 border-stone-200/90 shadow-xs">
         <h1 className="text-xl sm:text-3xl font-extrabold text-stone-900 tracking-tight leading-snug">
           How much would you like to invest?
@@ -95,7 +204,7 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
             </span>
           </div>
 
-          {/* Quick Preset Buttons - wrap naturally without horizontal scrolling */}
+          {/* Quick Preset Buttons - Calculated locally without re-fetching */}
           <div className="mt-3">
             <span className="text-xs text-stone-500 font-medium block mb-1.5">Quick choose:</span>
             <div className="flex flex-wrap gap-2">
@@ -121,7 +230,7 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
         </div>
       </section>
 
-      {/* 2. CHOOSE A COMPANY - Responsive vertical stack on mobile */}
+      {/* 2. CHOOSE A COMPANY */}
       <section className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3.5">
           <div>
@@ -132,15 +241,20 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
               Select a company to see what your money could buy.
             </p>
           </div>
-          <span className="self-start sm:self-auto text-[10px] sm:text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
-            Mock Market Prices
+          <span className="self-start sm:self-auto text-[10px] sm:text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+            Latest available prices
           </span>
         </div>
 
-        {/* Vertical stack on mobile, 3 columns on tablet/desktop */}
+        {/* Responsive grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
-          {MOCK_COMPANIES.map((company) => {
+          {COMPANIES.map((company) => {
             const isSelected = company.id === selectedCompany.id;
+            const companyQuote = quotesMap[company.ticker.toUpperCase()];
+            const price = isSelected
+              ? activeStockPrice
+              : (companyQuote?.priceUSD ?? company.stockPriceUsd ?? 0);
+
             return (
               <button
                 key={company.id}
@@ -155,17 +269,14 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      {/* Primary label: Company name */}
                       <h3 className="font-bold text-stone-900 text-base leading-tight">
                         {company.name}
                       </h3>
-                      {/* Secondary label: Ticker symbol clarified */}
                       <span className="text-xs text-stone-500 font-medium block mt-0.5">
                         <span className="font-mono font-semibold text-stone-700">{company.ticker}</span> · stock symbol
                       </span>
                     </div>
 
-                    {/* Selected Indicator */}
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                         isSelected
@@ -182,12 +293,12 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
                   <div className="flex items-baseline justify-between gap-1">
                     <span className="text-[11px] text-stone-500 font-medium">Stock price:</span>
                     <span className="font-bold text-stone-900 text-sm">
-                      ${company.stockPriceUsd.toFixed(2)}{' '}
+                      {price > 0 ? `$${price.toFixed(2)}` : '...'}{' '}
                       <span className="text-[10px] text-stone-500 font-normal">USD</span>
                     </span>
                   </div>
                   <span className="text-[10px] text-stone-400 block text-right">
-                    price for 1 share (mock)
+                    Latest available price for 1 share
                   </span>
                 </div>
               </button>
@@ -196,7 +307,7 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
         </div>
       </section>
 
-      {/* 3. STRONGEST ELEMENT B: THE ESTIMATED RESULT */}
+      {/* 3. ESTIMATED RESULT */}
       <section className="bg-stone-900 text-stone-100 rounded-2xl p-5 sm:p-7 border border-stone-800 shadow-md">
         {/* Currency conversion context */}
         <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 pb-3 border-b border-stone-800">
@@ -205,11 +316,11 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
               Currency conversion
             </span>
             <span className="text-xs font-mono font-medium text-stone-300 bg-stone-800 px-2 py-0.5 rounded">
-              1 SGD = {MOCK_EXCHANGE_RATE_SGD_TO_USD} USD
+              {fxRate > 0 ? `1 SGD = ${fxRate.toFixed(4)} USD` : 'Checking rate...'}
             </span>
           </div>
           <span className="text-xs text-stone-400">
-            US shares are priced in US dollars.
+            {fxData?.lastRefreshed ? `Last updated: ${fxData.lastRefreshed}` : 'US shares are priced in US dollars.'}
           </span>
         </div>
 
@@ -219,7 +330,7 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
           </p>
           <div className="mt-1 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
             <span className="text-3xl sm:text-5xl font-extrabold text-emerald-400 tracking-tight break-words">
-              {isValidAmount ? estimatedShares.toFixed(2) : '0.00'} shares
+              {hasMarketData && isValidAmount ? formatSharesDisplay(estimatedShares) : '0.00'} shares
             </span>
             <span className="text-stone-300 text-base sm:text-xl font-semibold mt-0.5 sm:mt-0">
               of {selectedCompany.name} ({selectedCompany.ticker})
@@ -227,17 +338,27 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
           </div>
 
           <p className="text-xs text-stone-400 mt-2.5 leading-relaxed break-words">
-            Your S$ {sgdAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} SGD converts to approximately ${usdAmount.toFixed(2)} USD. At ${selectedCompany.stockPriceUsd.toFixed(2)} USD per share, that equals approximately {isValidAmount ? estimatedShares.toFixed(2) : '0.00'} shares.
+            {hasMarketData && isValidAmount ? (
+              <>
+                Your S$ {sgdAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} SGD converts to approximately ${usdAmount.toFixed(2)} USD (rate: {fxRate}). At ${activeStockPrice.toFixed(2)} USD per share (latest available price{quoteData?.latestTradingDay ? ` on ${quoteData.latestTradingDay}` : ''}), that equals approximately {formatSharesDisplay(estimatedShares)} shares.
+              </>
+            ) : status === 'loading' ? (
+              'Retrieving latest market data to calculate your simulated shares...'
+            ) : (
+              'Enter an amount in SGD and select a company to calculate your simulated shares.'
+            )}
           </p>
         </div>
 
-        {/* CTA Button: prominent & easy to tap on mobile */}
+        {/* CTA Button */}
         <div className="pt-4 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-stone-400 text-center sm:text-left w-full sm:w-auto">
-            {isValidAmount ? (
+            {canProceed ? (
               <span>Review your simulation details before confirming.</span>
-            ) : (
+            ) : !isValidAmount ? (
               <span className="text-amber-400 font-medium">Enter an amount above S$ 0 to continue.</span>
+            ) : (
+              <span className="text-stone-400">Waiting for market data to calculate shares.</span>
             )}
           </p>
 
@@ -245,9 +366,9 @@ export const InvestmentScreen: React.FC<InvestmentScreenProps> = ({
             id="review-simulation-cta"
             type="button"
             onClick={onProceed}
-            disabled={!isValidAmount}
+            disabled={!canProceed}
             className={`w-full sm:w-auto px-7 py-3.5 sm:py-3 rounded-xl font-bold text-base sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] ${
-              isValidAmount
+              canProceed
                 ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow-md cursor-pointer'
                 : 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed'
             }`}

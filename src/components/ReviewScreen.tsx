@@ -8,6 +8,9 @@ interface ReviewScreenProps {
   sgdToUsdRate: number;
   usdAmount: number;
   estimatedShares: number;
+  stockPriceUsd: number;
+  lastRefreshedFx?: string;
+  latestTradingDayQuote?: string;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -18,9 +21,17 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
   sgdToUsdRate,
   usdAmount,
   estimatedShares,
+  stockPriceUsd,
+  lastRefreshedFx,
+  latestTradingDayQuote,
   onConfirm,
   onBack,
 }) => {
+  const formatSharesDisplay = (shares: number) => {
+    if (shares <= 0) return '0.00';
+    return shares < 10 ? shares.toFixed(3) : shares.toFixed(2);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* Header */}
@@ -42,14 +53,14 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
         </p>
       </div>
 
-      {/* Breakdown Card - Clear Vertical Mobile Layout */}
+      {/* Breakdown Card - Clear Vertical Layout */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
         <div className="px-5 sm:px-6 py-3.5 border-b border-stone-100 bg-stone-50/70 flex items-center justify-between gap-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">
             Simulation Details
           </h2>
-          <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 border border-amber-200 px-2 py-0.5 rounded shrink-0">
-            Mock Market Data
+          <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded shrink-0">
+            Latest Available Market Data
           </span>
         </div>
 
@@ -99,12 +110,12 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 3. Currency conversion
               </span>
               <span className="text-[11px] sm:text-xs text-stone-500">
-                US shares are priced in US dollars.
+                US shares are priced in US dollars. {lastRefreshedFx ? `(Updated: ${lastRefreshedFx})` : ''}
               </span>
             </div>
             <div className="text-left sm:text-right mt-1 sm:mt-0">
               <span className="text-sm sm:text-base font-bold text-stone-900 font-mono block">
-                1 SGD = {sgdToUsdRate.toFixed(2)} USD
+                1 SGD = {sgdToUsdRate.toFixed(4)} USD
               </span>
               <span className="text-xs text-stone-500">
                 Converts to ≈ ${usdAmount.toFixed(2)} USD
@@ -119,14 +130,14 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 4. Stock price in USD
               </span>
               <span className="text-[11px] sm:text-xs text-stone-500">
-                Price to buy 1 full share
+                Latest available price for 1 share {latestTradingDayQuote ? `(${latestTradingDayQuote})` : ''}
               </span>
             </div>
             <div className="text-left sm:text-right mt-1 sm:mt-0">
               <span className="text-base sm:text-lg font-bold text-stone-900 font-mono block">
-                ${selectedCompany.stockPriceUsd.toFixed(2)} USD
+                ${stockPriceUsd.toFixed(2)} USD
               </span>
-              <span className="text-xs text-stone-400">per share (mock)</span>
+              <span className="text-xs text-stone-400">Latest available price</span>
             </div>
           </div>
 
@@ -137,12 +148,12 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 5. Estimated shares you could own
               </span>
               <span className="text-xs text-emerald-800">
-                Calculated by dividing ${usdAmount.toFixed(2)} USD by ${selectedCompany.stockPriceUsd.toFixed(2)} USD
+                Calculated by dividing ${usdAmount.toFixed(2)} USD by ${stockPriceUsd.toFixed(2)} USD
               </span>
             </div>
             <div className="text-left sm:text-right mt-1 sm:mt-0">
               <span className="text-3xl sm:text-4xl font-extrabold text-emerald-800 break-words block tracking-tight">
-                {estimatedShares.toFixed(2)}
+                {formatSharesDisplay(estimatedShares)}
               </span>
               <span className="text-xs font-bold text-emerald-700 block">
                 shares of {selectedCompany.name}
@@ -152,7 +163,7 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons - Stacked on Mobile for one-handed thumb reach */}
+      {/* Action Buttons */}
       <div className="flex flex-col gap-3 pt-2 sm:flex-row-reverse sm:items-center sm:justify-between">
         <button
           id="confirm-simulation-cta"
