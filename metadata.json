@@ -1,0 +1,6 @@
+{
+  "name": "SimplyInvest",
+  "description": "A minimalist educational investment simulator helping beginners understand how money converts into company shares.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
